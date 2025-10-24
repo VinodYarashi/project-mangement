@@ -2,7 +2,7 @@ import {User} from "../models/user.model.js"
 import {ApiResponse} from "../utils/api-response.js";
 import {ApiError} from "../utils/api-error.js";
 import { asyncHandler } from "../utils/async-handeler.js";
-import { emailVerificationmailgenContent, sendmail } from "../utils/mail.js";
+import { emailVerificationmailgenContent, forgetPasswordgenContent, sendmail } from "../utils/mail.js";
 import jwt from "jsonwebtoken"
 const generateAccessAndRefreshTokens = async (userId) => {
     try {
@@ -235,7 +235,7 @@ const refreshAccessToken = asyncHandler (async (req,res) => {
     try {
         const decodedToken = jwt.verify(incomingRefreshToken,process.env.REFRESH_TOKEN_SECRET)
 
-        const user = await user.findById(decodedToken?._id);
+        const user = await User.findById(decodedToken?._id);
         if(!user) {
             throw new ApiError(401,"invalid refresh token ");
         }
@@ -264,5 +264,36 @@ const refreshAccessToken = asyncHandler (async (req,res) => {
     } catch (error) {
         throw new ApiError(401,"invalif refreshtoken")
     }
+});
+const forgetPasswordRequest = asyncHandler(async(req,res) =>{
+    const {email} = req.body
+    const user = await User.findOne({email})
+    if(!user){
+        throw new ApiError(404,"User does not exist",[])
+    }
+   const{unHashedToken,hashedToken,tokenExpiry} = user.generateTemporaryToken();
+    user.forgetPasswordToken = hashedToken
+    user.forgetPasswordExpiry = tokenExpiry
+    await user.save({validateBeforeSave: false})
+    await sendmail(
+         {
+                email: user?.email,
+                subject: "password reset request ",
+                mailgenContent: forgetPasswordgenContent(
+                    user.username,
+                    `${process.env.FORGET_PASSWORD_REDIRECT_URL}/${unHashedToken}`,
+                ),
+            });
+
+            return res
+                .status(200)
+                .json(
+                    new ApiResponse(
+                        200,
+                        {},
+                        "password reset has been sent on your mailid"
+                    )
+                )
+    
 });
 export {resgisterUser,login,logoutUser,getCurrentUser ,verifyEmail , resendEmailVerification,  refreshAccessToken };
