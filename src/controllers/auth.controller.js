@@ -344,4 +344,15 @@ const changeCurrentPassword = asyncHandler(async (req,res)=>{
         )
        )
 });
-export {resgisterUser,login,logoutUser,getCurrentUser ,verifyEmail , resendEmailVerification,  refreshAccessToken ,forgetPasswordRequest,resetForgetPassword,changeCurrentPassword};
+export {
+    resgisterUser,
+    login,
+    logoutUser,
+    getCurrentUser ,
+    verifyEmail , 
+    resendEmailVerification, 
+    refreshAccessToken ,
+    forgetPasswordRequest,
+    resetForgetPassword,
+    changeCurrentPassword
+};
